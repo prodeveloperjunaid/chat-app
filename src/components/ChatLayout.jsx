@@ -298,26 +298,26 @@ export default function ChatLayout({ user, onLogout }) {
           showMobileChat ? 'hidden md:flex' : 'flex'
         } w-full md:w-80 border-r border-gray-200 bg-gray-50 flex-col`}
       >
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+        <div className="p-3.5 border-b border-gray-200 flex items-center justify-between bg-white space-x-2">
+          <div className="flex items-center space-x-2.5 min-w-0 flex-1 overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
               {user?.name ? user.name[0].toUpperCase() : 'U'}
             </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <h3 className="text-sm font-bold text-gray-900">{user?.name || 'User'}</h3>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-1.5 min-w-0">
+                <h3 className="text-sm font-bold text-gray-900 truncate whitespace-nowrap">{user?.name || 'User'}</h3>
                 {isAdmin && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-amber-100 text-amber-800 rounded uppercase tracking-wider">
+                  <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-amber-100 text-amber-800 rounded uppercase tracking-wider shrink-0">
                     Admin
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+              <p className="text-xs text-gray-500 truncate whitespace-nowrap">{user?.email}</p>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className="text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 py-1.5 px-3 rounded-lg transition-colors cursor-pointer"
+            className="text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer shrink-0"
           >
             Logout
           </button>
