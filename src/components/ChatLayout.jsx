@@ -2,7 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
-const socket = io(API_BASE || window.location.origin);
+const socket = io(API_BASE || window.location.origin, {
+  transports: ['polling', 'websocket'],
+  reconnectionAttempts: 5,
+  reconnectionDelay: 2000,
+});
 
 export default function ChatLayout({ user, onLogout }) {
   const messagesEndRef = useRef(null);
