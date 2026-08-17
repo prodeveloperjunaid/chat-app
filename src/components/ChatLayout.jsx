@@ -185,6 +185,41 @@ export default function ChatLayout({ user, onLogout }) {
     }));
   };
 
+  const handleDeleteMessage = async (msgId) => {
+    if (!msgId) return;
+
+    setMessages((prev) => ({
+      ...prev,
+      [activeChatId]: (prev[activeChatId] || []).filter((m) => m._id !== msgId && m.id !== msgId),
+    }));
+
+    try {
+      await fetch(`${API_BASE}/api/messages/${msgId}`, {
+        method: 'DELETE',
+      });
+    } catch (e) {
+      console.error('Delete message error:', e);
+    }
+  };
+
+  const handleClearChatHistory = async () => {
+    if (!activeChatId) return;
+    if (!window.confirm('Are you sure you want to clear this chat history?')) return;
+
+    setMessages((prev) => ({
+      ...prev,
+      [activeChatId]: [],
+    }));
+
+    try {
+      await fetch(`${API_BASE}/api/messages/chat/${activeChatId}`, {
+        method: 'DELETE',
+      });
+    } catch (e) {
+      console.error('Clear chat error:', e);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!messageText.trim() || !activeChat || !user) return;
 
@@ -314,23 +349,36 @@ export default function ChatLayout({ user, onLogout }) {
       >
         {activeChat ? (
           <>
-            <div className="p-4 border-b border-gray-200 bg-white flex items-center space-x-3">
-              <button
-                onClick={() => setShowMobileChat(false)}
-                className="md:hidden p-1.5 -ml-1 mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
+            <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setShowMobileChat(false)}
+                  className="md:hidden p-1.5 -ml-1 mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
 
-              <div className={`w-8 h-8 rounded-full ${activeChat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-semibold text-xs`}>
-                {activeChat.name[0]}
+                <div className={`w-8 h-8 rounded-full ${activeChat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-semibold text-xs`}>
+                  {activeChat.name[0]}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">{activeChat.name}</h3>
+                  <p className="text-xs text-emerald-600 font-medium">● Online</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-gray-900">{activeChat.name}</h3>
-                <p className="text-xs text-emerald-600 font-medium">● Online</p>
-              </div>
+
+              <button
+                onClick={handleClearChatHistory}
+                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 py-1.5 px-3 rounded-lg flex items-center space-x-1.5 font-semibold transition-colors cursor-pointer border border-red-100"
+                title="Clear Chat History"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Clear Chat</span>
+              </button>
             </div>
 
             <div className="flex-1 p-4 md:p-6 bg-gray-50/50 overflow-y-auto space-y-3">
@@ -350,19 +398,33 @@ export default function ChatLayout({ user, onLogout }) {
                 currentMessages.map((msg) => (
                   <div
                     key={msg.id || msg._id}
-                    className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
+                    className={`group relative flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
                   >
                     <div
-                      className={`p-3 rounded-2xl max-w-xs text-sm shadow-sm ${
+                      className={`relative p-3 rounded-2xl max-w-xs text-sm shadow-sm ${
                         msg.sender === 'me'
                           ? 'bg-blue-600 text-white rounded-br-none'
                           : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
                       }`}
                     >
                       <p>{msg.text}</p>
-                      <p className={`text-[8px] mt-1 text-right ${msg.sender === 'me' ? 'text-blue-100' : 'text-gray-400'}`}>
-                        {msg.time}
-                      </p>
+                      <div className="flex items-center justify-end space-x-1.5 mt-1">
+                        <span className={`text-[8px] ${msg.sender === 'me' ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {msg.time}
+                        </span>
+
+                        {msg._id && (
+                          <button
+                            onClick={() => handleDeleteMessage(msg._id)}
+                            title="Delete message"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-red-400 text-gray-400 cursor-pointer"
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))

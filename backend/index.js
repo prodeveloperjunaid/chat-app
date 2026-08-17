@@ -160,6 +160,26 @@ app.post('/api/messages', async (req, res) => {
   }
 });
 
+app.delete('/api/messages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Message.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Message deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete message' });
+  }
+});
+
+app.delete('/api/messages/chat/:chatId', async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    await Message.deleteMany({ chatId: String(chatId) });
+    res.json({ success: true, message: 'Chat history cleared' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear chat history' });
+  }
+});
+
 app.post('/api/clean', async (req, res) => {
   try {
     await Message.deleteMany({});
