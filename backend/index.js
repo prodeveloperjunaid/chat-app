@@ -186,6 +186,22 @@ app.delete('/api/messages/chat/:chatId', async (req, res) => {
   }
 });
 
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await User.findByIdAndDelete(id);
+    await Message.deleteMany({
+      $or: [
+        { senderId: String(id) },
+        { chatId: { $regex: String(id) } }
+      ]
+    });
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 app.post('/api/clean', async (req, res) => {
   try {
     await Message.deleteMany({});
