@@ -15,6 +15,7 @@ const getConversationId = (id1, id2) => {
 
 export default function ChatLayout({ user, onLogout }) {
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const isAdmin = user?.isAdmin !== undefined 
     ? Boolean(user.isAdmin) 
@@ -26,6 +27,8 @@ export default function ChatLayout({ user, onLogout }) {
   const [messageText, setMessageText] = useState('');
   const [messages, setMessages] = useState({});
   const [unreadCounts, setUnreadCounts] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isPeerTyping, setIsPeerTyping] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/chats`)
@@ -174,19 +177,53 @@ export default function ChatLayout({ user, onLogout }) {
       }
     });
 
+    socket.on('typing', (data) => {
+      if (data.chatId === activeChatId && String(data.senderId) !== String(user?._id || user?.id)) {
+        setIsPeerTyping(true);
+      }
+    });
+
+    socket.on('stop_typing', (data) => {
+      if (data.chatId === activeChatId && String(data.senderId) !== String(user?._id || user?.id)) {
+        setIsPeerTyping(false);
+      }
+    });
+
     return () => {
       socket.off('receive_message');
+      socket.off('typing');
+      socket.off('stop_typing');
     };
-  }, [user, activeChat]);
+  }, [user, activeChat, activeChatId]);
 
   const handleSelectChat = (chat) => {
     setActiveChat(chat);
     setShowMobileChat(true);
+    setIsPeerTyping(false);
     const friendId = String(chat._id || chat.id);
     setUnreadCounts((prev) => ({
       ...prev,
       [friendId]: 0,
     }));
+  };
+
+  const handleInputChange = (e) => {
+    setMessageText(e.target.value);
+
+    if (activeChatId && socket) {
+      socket.emit('typing', {
+        chatId: activeChatId,
+        senderId: user?._id || user?.id,
+      });
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit('stop_typing', {
+          chatId: activeChatId,
+          senderId: user?._id || user?.id,
+        });
+      }, 1500);
+    }
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -276,6 +313,11 @@ export default function ChatLayout({ user, onLogout }) {
     }));
 
     setMessageText('');
+    setIsPeerTyping(false);
+
+    if (socket) {
+      socket.emit('stop_typing', { chatId, senderId: currentUserId });
+    }
 
     try {
       await fetch(`${API_BASE}/api/messages`, {
@@ -290,8 +332,14 @@ export default function ChatLayout({ user, onLogout }) {
     socket.emit('send_message', payload);
   };
 
+  const filteredChats = chats.filter(
+    (c) =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
-    <div className="w-full max-w-6xl h-screen md:h-[calc(100vh-3rem)] max-h-[850px] flex bg-white rounded-none md:rounded-2xl shadow-xl overflow-hidden border-0 md:border border-gray-200">
+    <div className="w-full max-w-6xl h-[100dvh] md:h-[calc(100vh-3rem)] max-h-[850px] flex bg-white rounded-none md:rounded-2xl shadow-xl overflow-hidden border-0 md:border border-gray-200">
       {/* 1. Left Sidebar */}
       <div
         className={`${
@@ -300,7 +348,7 @@ export default function ChatLayout({ user, onLogout }) {
       >
         <div className="p-3.5 border-b border-gray-200 flex items-center justify-between bg-white space-x-2">
           <div className="flex items-center space-x-2.5 min-w-0 flex-1 overflow-hidden">
-            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
               {user?.name ? user.name[0].toUpperCase() : 'U'}
             </div>
             <div className="min-w-0 flex-1">
@@ -323,20 +371,50 @@ export default function ChatLayout({ user, onLogout }) {
           </button>
         </div>
 
+        {/* Search Bar for Contacts */}
+        <div className="p-2.5 border-b border-gray-200 bg-white">
+          <div className="relative flex items-center">
+            <svg className="w-4 h-4 text-gray-400 absolute left-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search contacts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 text-gray-400 hover:text-gray-600 text-xs cursor-pointer p-0.5"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="p-3 flex-1 overflow-y-auto space-y-1">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Chats ({chats.length})
-          </p>
-          {chats.length === 0 ? (
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Chats ({filteredChats.length})
+            </p>
+          </div>
+          {filteredChats.length === 0 ? (
             <div className="p-6 text-center text-xs text-gray-400 flex flex-col items-center justify-center space-y-2">
               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
-                👥
+                🔍
               </div>
-              <p className="font-medium text-gray-600">No active contacts</p>
-              <p className="text-[11px] text-gray-400">Ask a friend to sign up on ChitChat!</p>
+              <p className="font-medium text-gray-600">
+                {searchQuery ? 'No contacts found' : 'No active contacts'}
+              </p>
+              <p className="text-[11px] text-gray-400">
+                {searchQuery ? 'Try a different search term' : 'Ask a friend to sign up on ChitChat!'}
+              </p>
             </div>
           ) : (
-            chats.map((chat) => {
+            filteredChats.map((chat) => {
               const friendId = String(chat._id || chat.id);
               const isSelected = activeChat && (String(activeChat._id || activeChat.id) === friendId);
               const unread = unreadCounts[friendId] || 0;
@@ -347,7 +425,7 @@ export default function ChatLayout({ user, onLogout }) {
                   onClick={() => handleSelectChat(chat)}
                   className={`group/contact p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between space-x-2 ${
                     isSelected
-                      ? 'bg-blue-50 border-blue-200'
+                      ? 'bg-blue-50 border-blue-200 shadow-sm'
                       : 'bg-white border-gray-100 hover:bg-gray-50'
                   }`}
                 >
@@ -395,23 +473,37 @@ export default function ChatLayout({ user, onLogout }) {
       >
         {activeChat ? (
           <>
-            <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+            <div className="p-3.5 md:p-4 border-b border-gray-200 bg-white flex items-center justify-between shadow-xs">
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setShowMobileChat(false)}
-                  className="md:hidden p-1.5 -ml-1 mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer"
+                  className="md:hidden p-1.5 -ml-1 mr-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
 
-                <div className={`w-8 h-8 rounded-full ${activeChat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-semibold text-xs`}>
+                <div className={`w-9 h-9 rounded-full ${activeChat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-bold text-sm shadow-xs`}>
                   {activeChat.name[0]}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">{activeChat.name}</h3>
-                  <p className="text-xs text-emerald-600 font-medium">● Online</p>
+                  <h3 className="text-sm md:text-base font-bold text-gray-900">{activeChat.name}</h3>
+                  {isPeerTyping ? (
+                    <p className="text-xs text-blue-600 font-semibold animate-pulse flex items-center space-x-1">
+                      <span>typing</span>
+                      <span className="inline-flex space-x-0.5">
+                        <span className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"></span>
+                        <span className="w-1 h-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                        <span className="w-1 h-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-emerald-600 font-medium flex items-center space-x-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>Online</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -429,7 +521,7 @@ export default function ChatLayout({ user, onLogout }) {
               )}
             </div>
 
-            <div className="flex-1 p-4 md:p-6 bg-gray-50/50 overflow-y-auto space-y-3">
+            <div className="flex-1 p-3 md:p-6 bg-gray-50/50 overflow-y-auto space-y-3">
               {currentMessages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center space-y-3 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-sm border border-blue-100">
@@ -449,13 +541,13 @@ export default function ChatLayout({ user, onLogout }) {
                     className={`group relative flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
                   >
                     <div
-                      className={`relative p-3 rounded-2xl max-w-xs text-sm shadow-sm ${
+                      className={`relative p-3 rounded-2xl max-w-[85%] sm:max-w-xs md:max-w-md text-sm shadow-xs ${
                         msg.sender === 'me'
                           ? 'bg-blue-600 text-white rounded-br-none'
                           : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
                       }`}
                     >
-                      <p>{msg.text}</p>
+                      <p className="break-words whitespace-pre-wrap">{msg.text}</p>
                       <div className="flex items-center justify-end space-x-1.5 mt-1">
                         <span className={`text-[8px] ${msg.sender === 'me' ? 'text-blue-100' : 'text-gray-400'}`}>
                           {msg.time}
@@ -465,7 +557,7 @@ export default function ChatLayout({ user, onLogout }) {
                           <button
                             onClick={() => handleDeleteMessage(msg._id)}
                             title="Delete message (Admin Only)"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-red-400 text-gray-400 cursor-pointer"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-red-400 text-gray-400 cursor-pointer ml-1"
                           >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -481,18 +573,19 @@ export default function ChatLayout({ user, onLogout }) {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-3 md:p-4 border-t border-gray-200 bg-white flex space-x-2 md:space-x-3">
+            <div className="p-3 md:p-4 border-t border-gray-200 bg-white flex space-x-2 md:space-x-3 items-center">
               <input
                 type="text"
                 placeholder="Type a message..."
                 value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                className="flex-1 px-3.5 md:px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-sm focus:outline-none focus:bg-white focus:border-blue-600"
+                className="flex-1 px-3.5 md:px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition-all"
               />
               <button
                 onClick={handleSendMessage}
-                className="px-4 md:px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition-colors cursor-pointer"
+                disabled={!messageText.trim()}
+                className="px-4 md:px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 active:scale-95 shrink-0"
               >
                 Send
               </button>

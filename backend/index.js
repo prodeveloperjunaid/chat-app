@@ -235,6 +235,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('typing', (data) => {
+    socket.broadcast.emit('typing', data);
+  });
+
+  socket.on('stop_typing', (data) => {
+    socket.broadcast.emit('stop_typing', data);
+  });
+
   socket.on('disconnect', () => {
     console.log(`❌ User Disconnected: ${socket.id}`);
   });
