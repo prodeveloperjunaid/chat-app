@@ -122,13 +122,14 @@ export default function Auth({ onLogin }) {
 
       <div className="p-6 sm:p-8">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-            {isSignUp ? 'Create Account' : 'Sign In'}
-          </h2>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 text-white font-bold text-xl mb-3 shadow-lg shadow-blue-500/30">
+            💬
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">ChitChat</h1>
           <p className="text-gray-500 text-sm mt-1">
             {isSignUp
-              ? 'Fill in the details below to register'
-              : 'Enter your credentials to access your account'}
+              ? 'Create an account to start chatting'
+              : 'Welcome back! Sign in to continue'}
           </p>
         </div>
 
