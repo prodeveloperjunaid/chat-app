@@ -8,12 +8,9 @@ export default function ChatLayout({ user, onLogout }) {
 
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [messages, setMessages] = useState({});
-  const [newContactName, setNewContactName] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:5000/api/chats')
@@ -28,10 +25,6 @@ export default function ChatLayout({ user, onLogout }) {
       })
       .catch((err) => console.log('Contacts fetch notice:', err));
   }, []);
-
-  const filteredChats = chats.filter((chat) =>
-    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -78,25 +71,6 @@ export default function ChatLayout({ user, onLogout }) {
   const handleSelectChat = (chat) => {
     setActiveChat(chat);
     setShowMobileChat(true);
-  };
-
-  const handleAddContact = (e) => {
-    e.preventDefault();
-    if (!newContactName.trim()) return;
-
-    fetch('http://localhost:5000/api/chats', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newContactName }),
-    })
-      .then((res) => res.json())
-      .then((createdUser) => {
-        setChats((prev) => [...prev, createdUser]);
-        setActiveChat(createdUser);
-        setNewContactName('');
-        setShowAddModal(false);
-      })
-      .catch((err) => console.error('Add contact error:', err));
   };
 
   const handleSendMessage = () => {
@@ -152,33 +126,16 @@ export default function ChatLayout({ user, onLogout }) {
           </button>
         </div>
 
-        <div className="p-3 border-b border-gray-200 bg-white flex items-center space-x-2">
-          <input
-            type="text"
-            placeholder="Search contacts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 px-3 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-xs focus:outline-none focus:bg-white focus:border-blue-500"
-          />
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors cursor-pointer"
-            title="Add New Contact"
-          >
-            + New
-          </button>
-        </div>
-
         <div className="p-3 flex-1 overflow-y-auto space-y-1">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Chats ({filteredChats.length})
+            Chats ({chats.length})
           </p>
-          {filteredChats.length === 0 ? (
+          {chats.length === 0 ? (
             <div className="p-4 text-center text-xs text-gray-400">
-              No contacts yet. Click <span className="font-bold text-blue-600">+ New</span> above to add your first contact!
+              No contacts available.
             </div>
           ) : (
-            filteredChats.map((chat) => {
+            chats.map((chat) => {
               const isSelected = activeChat && (activeChat._id === chat._id || activeChat.id === chat.id);
               return (
                 <div
@@ -280,42 +237,10 @@ export default function ChatLayout({ user, onLogout }) {
           </>
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-            Select a contact or click <span className="font-bold text-blue-600 mx-1">+ New</span> to add a contact!
+            Select a contact to start chatting!
           </div>
         )}
       </div>
-
-      {/* Add Contact Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <form onSubmit={handleAddContact} className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Add New Contact</h3>
-            <input
-              type="text"
-              placeholder="Enter Contact Name..."
-              value={newContactName}
-              onChange={(e) => setNewContactName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-blue-600"
-              autoFocus
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Add Contact
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }
