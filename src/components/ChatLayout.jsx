@@ -81,8 +81,8 @@ export default function ChatLayout({ user, onLogout }) {
 
     fetchMessages();
 
-    // Poll every 2.5 seconds for instant live updates on Vercel
-    const interval = setInterval(fetchMessages, 2500);
+    // Fast 1.2s live polling for active chat to get new messages instantly without reload
+    const interval = setInterval(fetchMessages, 1200);
     return () => clearInterval(interval);
   }, [activeChat, user]);
 
@@ -101,28 +101,29 @@ export default function ChatLayout({ user, onLogout }) {
         fetch(`${API_BASE}/api/messages/${chatId}`)
           .then((res) => res.json())
           .then((data) => {
-            if (Array.isArray(data) && data.length > 0) {
+            if (Array.isArray(data)) {
               const formatted = data.map((m) => ({
                 ...m,
                 sender: String(m.senderId) === String(currentUserId) ? 'me' : 'contact',
               }));
 
-              setMessages((prev) => {
-                const existing = prev[chatId] || [];
-                const newCount = data.length - existing.length;
-                if (newCount > 0) {
-                  const incomingCount = data.slice(existing.length).filter(
+              setMessages((prevMessages) => {
+                const existing = prevMessages[chatId] || [];
+                if (data.length > existing.length) {
+                  const newIncoming = data.slice(existing.length).filter(
                     (m) => String(m.senderId) === friendId
                   ).length;
-                  if (incomingCount > 0) {
-                    setUnreadCounts((u) => ({
-                      ...u,
-                      [friendId]: (u[friendId] || 0) + incomingCount,
-                    }));
+                  if (newIncoming > 0) {
+                    setTimeout(() => {
+                      setUnreadCounts((u) => ({
+                        ...u,
+                        [friendId]: (u[friendId] || 0) + newIncoming,
+                      }));
+                    }, 0);
                   }
                 }
                 return {
-                  ...prev,
+                  ...prevMessages,
                   [chatId]: formatted,
                 };
               });
@@ -132,7 +133,7 @@ export default function ChatLayout({ user, onLogout }) {
       });
     };
 
-    const interval = setInterval(checkBackgroundMessages, 3000);
+    const interval = setInterval(checkBackgroundMessages, 2000);
     return () => clearInterval(interval);
   }, [chats, activeChat, user]);
 
