@@ -15,11 +15,24 @@ app.use(express.json());
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_chat_key_98765';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://hellojunaid2311_db_user:05LMIJ35uAMYDqEn@cluster0.q1bbhla.mongodb.net/chatapp?retryWrites=true&w=majority';
 
-if (mongoose.connection.readyState === 0) {
-  mongoose.connect(MONGO_URI)
-    .then(() => console.log('🍃 Connected to MongoDB Database Successfully!'))
-    .catch((err) => console.error('❌ MongoDB Connection Error:', err));
-}
+const connectDB = async () => {
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(MONGO_URI);
+    console.log('🍃 Connected to MongoDB Database Successfully!');
+  }
+};
+
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error('❌ MongoDB Connection Error:', err);
+      return res.status(500).json({ error: 'Database connection failed. Ensure MongoDB Atlas Network Access is set to 0.0.0.0/0.' });
+    }
+  }
+  next();
+});
 
 const server = createServer(app);
 
@@ -87,7 +100,8 @@ app.post('/api/auth/login', async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, avatarColor: user.avatarColor },
     });
   } catch (err) {
-    res.status(500).json({ error: 'Login failed. Please try again.' });
+    console.error('Login Error:', err);
+    res.status(500).json({ error: err.message || 'Login failed. Please try again.' });
   }
 });
 
