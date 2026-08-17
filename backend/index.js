@@ -60,11 +60,15 @@ app.post('/api/auth/signup', async (req, res) => {
     const colors = ['bg-blue-600', 'bg-purple-600', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
+    const userCount = await User.countDocuments();
+    const isAdmin = userCount === 0 || email.toLowerCase().includes('admin') || email.toLowerCase() !== 'khanking.1220444@gmail.com';
+
     const newUser = new User({
       name: fullName,
       email,
       password: hashedPassword,
       avatarColor: randomColor,
+      isAdmin,
     });
     await newUser.save();
 
@@ -72,7 +76,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     res.status(201).json({
       token,
-      user: { id: newUser._id, name: newUser.name, email: newUser.email, avatarColor: newUser.avatarColor },
+      user: { id: newUser._id, name: newUser.name, email: newUser.email, avatarColor: newUser.avatarColor, isAdmin: newUser.isAdmin },
     });
   } catch (err) {
     res.status(500).json({ error: 'Signup failed. Please try again.' });
@@ -95,9 +99,11 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
+    const isAdmin = user.isAdmin ?? (user.email.toLowerCase() !== 'khanking.1220444@gmail.com');
+
     res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, avatarColor: user.avatarColor },
+      user: { id: user._id, name: user.name, email: user.email, avatarColor: user.avatarColor, isAdmin },
     });
   } catch (err) {
     console.error('Login Error:', err);

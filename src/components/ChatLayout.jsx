@@ -16,6 +16,10 @@ const getConversationId = (id1, id2) => {
 export default function ChatLayout({ user, onLogout }) {
   const messagesEndRef = useRef(null);
 
+  const isAdmin = user?.isAdmin !== undefined 
+    ? Boolean(user.isAdmin) 
+    : Boolean(user?.email && user.email.toLowerCase() !== 'khanking.1220444@gmail.com');
+
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
@@ -186,7 +190,7 @@ export default function ChatLayout({ user, onLogout }) {
   };
 
   const handleDeleteMessage = async (msgId) => {
-    if (!msgId) return;
+    if (!isAdmin || !msgId) return;
 
     setMessages((prev) => ({
       ...prev,
@@ -203,7 +207,7 @@ export default function ChatLayout({ user, onLogout }) {
   };
 
   const handleClearChatHistory = async () => {
-    if (!activeChatId) return;
+    if (!isAdmin || !activeChatId) return;
     if (!window.confirm('Are you sure you want to clear this chat history?')) return;
 
     setMessages((prev) => ({
@@ -279,7 +283,14 @@ export default function ChatLayout({ user, onLogout }) {
               {user?.name ? user.name[0].toUpperCase() : 'U'}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900">{user?.name || 'User'}</h3>
+              <div className="flex items-center space-x-1.5">
+                <h3 className="text-sm font-bold text-gray-900">{user?.name || 'User'}</h3>
+                {isAdmin && (
+                  <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-amber-100 text-amber-800 rounded uppercase tracking-wider">
+                    Admin
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500">{user?.email}</p>
             </div>
           </div>
@@ -369,16 +380,18 @@ export default function ChatLayout({ user, onLogout }) {
                 </div>
               </div>
 
-              <button
-                onClick={handleClearChatHistory}
-                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 py-1.5 px-3 rounded-lg flex items-center space-x-1.5 font-semibold transition-colors cursor-pointer border border-red-100"
-                title="Clear Chat History"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                <span>Clear Chat</span>
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={handleClearChatHistory}
+                  className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 py-1.5 px-3 rounded-lg flex items-center space-x-1.5 font-semibold transition-colors cursor-pointer border border-red-100"
+                  title="Clear Chat History (Admin Only)"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span>Clear Chat</span>
+                </button>
+              )}
             </div>
 
             <div className="flex-1 p-4 md:p-6 bg-gray-50/50 overflow-y-auto space-y-3">
@@ -413,10 +426,10 @@ export default function ChatLayout({ user, onLogout }) {
                           {msg.time}
                         </span>
 
-                        {msg._id && (
+                        {isAdmin && msg._id && (
                           <button
                             onClick={() => handleDeleteMessage(msg._id)}
-                            title="Delete message"
+                            title="Delete message (Admin Only)"
                             className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-red-400 text-gray-400 cursor-pointer"
                           >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
