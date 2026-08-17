@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5000');
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+const socket = io(API_BASE || window.location.origin);
 
 export default function ChatLayout({ user, onLogout }) {
   const messagesEndRef = useRef(null);
@@ -13,7 +14,7 @@ export default function ChatLayout({ user, onLogout }) {
   const [messages, setMessages] = useState({});
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/chats')
+    fetch(`${API_BASE}/api/chats`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -40,7 +41,7 @@ export default function ChatLayout({ user, onLogout }) {
     if (!activeChat) return;
     const chatId = activeChat._id || activeChat.id;
 
-    fetch(`http://localhost:5000/api/messages/${chatId}`)
+    fetch(`${API_BASE}/api/messages/${chatId}`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -132,7 +133,7 @@ export default function ChatLayout({ user, onLogout }) {
           </p>
           {chats.length === 0 ? (
             <div className="p-4 text-center text-xs text-gray-400">
-              No contacts available.
+              No contacts available yet.
             </div>
           ) : (
             chats.map((chat) => {

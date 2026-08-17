@@ -3,6 +3,8 @@ import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import InputField from './InputField';
 
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+
 const loginSchema = Yup.object({
   email: Yup.string()
     .email('Please enter a valid email address')
@@ -61,8 +63,8 @@ export default function Auth({ onLogin }) {
     setLoading(true);
 
     const endpoint = isSignUp
-      ? 'http://localhost:5000/api/auth/signup'
-      : 'http://localhost:5000/api/auth/login';
+      ? `${API_BASE}/api/auth/signup`
+      : `${API_BASE}/api/auth/login`;
 
     try {
       const response = await fetch(endpoint, {
@@ -85,7 +87,7 @@ export default function Auth({ onLogin }) {
         onLogin(data.user);
       }
     } catch (err) {
-      setErrorMessage('Server connection error. Please make sure backend is running!');
+      setErrorMessage('Server connection error. Please try again!');
     } finally {
       setLoading(false);
     }
