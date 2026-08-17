@@ -7,16 +7,15 @@
     },
     {
       "src": "package.json",
-      "use": "@vercel/vite"
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/index.js"
-    },
-    {
-      "src": "/socket.io/(.*)",
       "dest": "backend/index.js"
     },
     {
