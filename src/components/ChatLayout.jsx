@@ -8,6 +8,11 @@ const socket = io(API_BASE || window.location.origin, {
   reconnectionDelay: 2000,
 });
 
+const getConversationId = (id1, id2) => {
+  if (!id1 || !id2) return '';
+  return [String(id1), String(id2)].sort().join('_');
+};
+
 export default function ChatLayout({ user, onLogout }) {
   const messagesEndRef = useRef(null);
 
@@ -39,38 +44,51 @@ export default function ChatLayout({ user, onLogout }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const currentMessages = activeChat ? messages[activeChat._id || activeChat.id] || [] : [];
+  const activeChatId = activeChat
+    ? getConversationId(user?._id || user?.id, activeChat._id || activeChat.id)
+    : '';
+
+  const currentMessages = activeChatId ? messages[activeChatId] || [] : [];
 
   useEffect(() => {
     scrollToBottom();
   }, [currentMessages]);
 
   useEffect(() => {
-    if (!activeChat) return;
-    const chatId = activeChat._id || activeChat.id;
+    if (!activeChat || !user) return;
+    const currentUserId = user?._id || user?.id;
+    const friendId = activeChat._id || activeChat.id;
+    const chatId = getConversationId(currentUserId, friendId);
 
-    fetch(`${API_BASE}/api/messages/${chatId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // Format messages for current logged in user
-          const formatted = data.map((msg) => ({
-            ...msg,
-            sender: msg.senderId === (user?._id || user?.id) ? 'me' : 'contact',
-          }));
-          setMessages((prev) => ({
-            ...prev,
-            [chatId]: formatted,
-          }));
-        }
-      })
-      .catch((err) => console.log('Database fetch notice:', err));
+    const fetchMessages = () => {
+      fetch(`${API_BASE}/api/messages/${chatId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            const formatted = data.map((msg) => ({
+              ...msg,
+              sender: String(msg.senderId) === String(currentUserId) ? 'me' : 'contact',
+            }));
+            setMessages((prev) => ({
+              ...prev,
+              [chatId]: formatted,
+            }));
+          }
+        })
+        .catch((err) => console.log('Database fetch notice:', err));
+    };
+
+    fetchMessages();
+
+    // Poll every 2.5 seconds for instant live updates on Vercel
+    const interval = setInterval(fetchMessages, 2500);
+    return () => clearInterval(interval);
   }, [activeChat, user]);
 
   useEffect(() => {
     socket.on('receive_message', (incomingData) => {
       const targetId = incomingData.chatId;
-      const isMe = incomingData.senderId === (user?._id || user?.id);
+      const isMe = String(incomingData.senderId) === String(user?._id || user?.id);
 
       const msgToPush = {
         ...incomingData,
@@ -79,7 +97,6 @@ export default function ChatLayout({ user, onLogout }) {
 
       setMessages((prevMessages) => {
         const existing = prevMessages[targetId] || [];
-        // Avoid duplicate push if already present
         if (existing.some((m) => m._id && incomingData._id && m._id === incomingData._id)) {
           return prevMessages;
         }
@@ -100,22 +117,49 @@ export default function ChatLayout({ user, onLogout }) {
     setShowMobileChat(true);
   };
 
-  const handleSendMessage = () => {
-    if (!messageText.trim() || !activeChat) return;
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !activeChat || !user) return;
 
-    const chatId = activeChat._id || activeChat.id;
     const currentUserId = user?._id || user?.id || '';
+    const friendId = activeChat._id || activeChat.id;
+    const chatId = getConversationId(currentUserId, friendId);
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const payload = {
       text: messageText,
       chatId: chatId,
       senderId: currentUserId,
       socketId: socket.id,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: timeStr,
     };
 
-    socket.emit('send_message', payload);
+    const optimisticMsg = {
+      _id: Date.now().toString(),
+      text: messageText,
+      chatId: chatId,
+      senderId: currentUserId,
+      sender: 'me',
+      time: timeStr,
+    };
+
+    setMessages((prev) => ({
+      ...prev,
+      [chatId]: [...(prev[chatId] || []), optimisticMsg],
+    }));
+
     setMessageText('');
+
+    try {
+      await fetch(`${API_BASE}/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (e) {
+      console.error('Save message error:', e);
+    }
+
+    socket.emit('send_message', payload);
   };
 
   return (

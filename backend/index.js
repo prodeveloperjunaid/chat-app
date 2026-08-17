@@ -143,6 +143,23 @@ app.get('/api/messages/:chatId', async (req, res) => {
   }
 });
 
+app.post('/api/messages', async (req, res) => {
+  try {
+    const { chatId, senderId, sender, text, time } = req.body;
+    const savedMsg = new Message({
+      chatId: String(chatId),
+      senderId: String(senderId || ''),
+      sender: sender || 'contact',
+      text,
+      time: time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    });
+    await savedMsg.save();
+    res.status(201).json(savedMsg);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save message' });
+  }
+});
+
 app.post('/api/clean', async (req, res) => {
   try {
     await Message.deleteMany({});
