@@ -21,6 +21,7 @@ export default function ChatLayout({ user, onLogout }) {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [messages, setMessages] = useState({});
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
     fetch(`${API_BASE}/api/chats`)
@@ -85,6 +86,56 @@ export default function ChatLayout({ user, onLogout }) {
     return () => clearInterval(interval);
   }, [activeChat, user]);
 
+  // Background polling for unread badges on inactive contacts
+  useEffect(() => {
+    if (!user || chats.length === 0) return;
+    const currentUserId = user?._id || user?.id;
+
+    const checkBackgroundMessages = () => {
+      chats.forEach((chat) => {
+        const friendId = String(chat._id || chat.id);
+        const activeFriendId = activeChat ? String(activeChat._id || activeChat.id) : '';
+        if (friendId === activeFriendId) return;
+
+        const chatId = getConversationId(currentUserId, friendId);
+        fetch(`${API_BASE}/api/messages/${chatId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data) && data.length > 0) {
+              const formatted = data.map((m) => ({
+                ...m,
+                sender: String(m.senderId) === String(currentUserId) ? 'me' : 'contact',
+              }));
+
+              setMessages((prev) => {
+                const existing = prev[chatId] || [];
+                const newCount = data.length - existing.length;
+                if (newCount > 0) {
+                  const incomingCount = data.slice(existing.length).filter(
+                    (m) => String(m.senderId) === friendId
+                  ).length;
+                  if (incomingCount > 0) {
+                    setUnreadCounts((u) => ({
+                      ...u,
+                      [friendId]: (u[friendId] || 0) + incomingCount,
+                    }));
+                  }
+                }
+                return {
+                  ...prev,
+                  [chatId]: formatted,
+                };
+              });
+            }
+          })
+          .catch(() => {});
+      });
+    };
+
+    const interval = setInterval(checkBackgroundMessages, 3000);
+    return () => clearInterval(interval);
+  }, [chats, activeChat, user]);
+
   useEffect(() => {
     socket.on('receive_message', (incomingData) => {
       const targetId = incomingData.chatId;
@@ -105,16 +156,32 @@ export default function ChatLayout({ user, onLogout }) {
           [targetId]: [...existing, msgToPush],
         };
       });
+
+      if (!isMe) {
+        const senderId = String(incomingData.senderId);
+        const activeFriendId = activeChat ? String(activeChat._id || activeChat.id) : '';
+        if (senderId !== activeFriendId) {
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [senderId]: (prev[senderId] || 0) + 1,
+          }));
+        }
+      }
     });
 
     return () => {
       socket.off('receive_message');
     };
-  }, [user]);
+  }, [user, activeChat]);
 
   const handleSelectChat = (chat) => {
     setActiveChat(chat);
     setShowMobileChat(true);
+    const friendId = String(chat._id || chat.id);
+    setUnreadCounts((prev) => ({
+      ...prev,
+      [friendId]: 0,
+    }));
   };
 
   const handleSendMessage = async () => {
@@ -202,24 +269,35 @@ export default function ChatLayout({ user, onLogout }) {
             </div>
           ) : (
             chats.map((chat) => {
-              const isSelected = activeChat && (activeChat._id === chat._id || activeChat.id === chat.id);
+              const friendId = String(chat._id || chat.id);
+              const isSelected = activeChat && (String(activeChat._id || activeChat.id) === friendId);
+              const unread = unreadCounts[friendId] || 0;
+
               return (
                 <div
-                  key={chat._id || chat.id}
+                  key={friendId}
                   onClick={() => handleSelectChat(chat)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center space-x-3 ${
+                  className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between space-x-3 ${
                     isSelected
                       ? 'bg-blue-50 border-blue-200'
                       : 'bg-white border-gray-100 hover:bg-gray-50'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-full ${chat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-semibold text-xs`}>
-                    {chat.name[0]}
+                  <div className="flex items-center space-x-3 overflow-hidden">
+                    <div className={`w-8 h-8 rounded-full ${chat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-semibold text-xs shrink-0`}>
+                      {chat.name[0]}
+                    </div>
+                    <div className="truncate">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{chat.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{chat.email || 'Tap to open chat'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{chat.name}</p>
-                    <p className="text-xs text-gray-400">{chat.email || 'Tap to open chat'}</p>
-                  </div>
+
+                  {unread > 0 && !isSelected && (
+                    <span className="px-2 py-0.5 text-[10px] font-black text-white bg-rose-500 rounded-full shadow-sm shadow-rose-500/40 animate-pulse tracking-wider shrink-0">
+                      NEW {unread > 1 ? `(${unread})` : ''}
+                    </span>
+                  )}
                 </div>
               );
             })
