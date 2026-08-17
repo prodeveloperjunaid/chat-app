@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+@theme {
+  --color-navy-dark: #1A3D64;
+  --color-purple-tech: #7886C7;
+  --color-charcoal-dark: #111827;
+  --color-teal-accent: #00B7B5;
+}

@@ -94,14 +94,14 @@ export default function Auth({ onLogin }) {
   };
 
   return (
-    <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden text-gray-800">
+    <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden text-[#111827]">
       <div className="flex border-b border-gray-200 bg-gray-50/50">
         <button
           type="button"
           onClick={() => { setIsSignUp(false); setErrorMessage(null); }}
-          className={`flex-1 py-3.5 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
+          className={`flex-1 py-3.5 text-sm font-bold transition-colors duration-200 cursor-pointer ${
             !isSignUp
-              ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+              ? 'text-[#1A3D64] border-b-2 border-[#1A3D64] bg-white'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -110,9 +110,9 @@ export default function Auth({ onLogin }) {
         <button
           type="button"
           onClick={() => { setIsSignUp(true); setErrorMessage(null); }}
-          className={`flex-1 py-3.5 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
+          className={`flex-1 py-3.5 text-sm font-bold transition-colors duration-200 cursor-pointer ${
             isSignUp
-              ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+              ? 'text-[#1A3D64] border-b-2 border-[#1A3D64] bg-white'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -122,10 +122,10 @@ export default function Auth({ onLogin }) {
 
       <div className="p-6 sm:p-8">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 text-white font-bold text-xl mb-3 shadow-lg shadow-blue-500/30">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#1A3D64] to-[#7886C7] text-white font-bold text-xl mb-3 shadow-lg shadow-[#1A3D64]/30">
             💬
           </div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">ChitChat</h1>
+          <h1 className="text-2xl font-black text-[#111827] tracking-tight">ChitChat</h1>
           <p className="text-gray-500 text-sm mt-1">
             {isSignUp
               ? 'Create an account to start chatting'
@@ -191,9 +191,9 @@ export default function Auth({ onLogin }) {
                       name="rememberMe"
                       checked={values.rememberMe}
                       onChange={handleChange}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="w-4 h-4 rounded border-gray-300 text-[#1A3D64] focus:ring-[#1A3D64]"
                     />
-                    <span className="text-gray-600 text-xs font-medium">Remember me</span>
+                    <span className="text-[#111827] text-xs font-medium">Remember me</span>
                   </label>
                 </div>
               ) : (
@@ -205,11 +205,11 @@ export default function Auth({ onLogin }) {
                       checked={values.agreeTerms}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#1A3D64] focus:ring-[#1A3D64]"
                     />
-                    <span className="text-gray-600 text-xs">
+                    <span className="text-[#111827] text-xs">
                       I agree to the{' '}
-                      <a href="#" className="text-blue-600 hover:underline font-semibold">
+                      <a href="#" className="text-[#1A3D64] hover:underline font-semibold">
                         Terms & Conditions
                       </a>
                     </span>
@@ -223,13 +223,17 @@ export default function Auth({ onLogin }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500/40 active:scale-[0.99] transition-all duration-150 text-sm cursor-pointer disabled:opacity-50"
+                className="w-full py-3 px-4 mt-2 bg-gradient-to-r from-[#1A3D64] to-[#7886C7] hover:opacity-95 text-white font-bold rounded-xl shadow-md shadow-[#1A3D64]/25 focus:outline-none focus:ring-2 focus:ring-[#7886C7]/40 active:scale-[0.99] transition-all duration-150 text-sm cursor-pointer disabled:opacity-50"
               >
                 {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
               </button>
             </Form>
           )}
         </Formik>
+
+        <p className="text-[11px] text-gray-400 text-center mt-6">
+          Portfolio Demo App • Educational Project
+        </p>
       </div>
     </div>
   );

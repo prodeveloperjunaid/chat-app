@@ -19,7 +19,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-0 md:p-6 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#1A3D64] via-[#111827] to-[#0f172a] flex items-center justify-center p-0 md:p-6 overflow-hidden text-[#111827]">
       {user ? (
         <ChatLayout user={user} onLogout={handleLogout} />
       ) : (

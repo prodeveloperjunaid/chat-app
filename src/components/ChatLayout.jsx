@@ -348,14 +348,14 @@ export default function ChatLayout({ user, onLogout }) {
       >
         <div className="p-3.5 border-b border-gray-200 flex items-center justify-between bg-white space-x-2">
           <div className="flex items-center space-x-2.5 min-w-0 flex-1 overflow-hidden">
-            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#1A3D64] to-[#7886C7] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
               {user?.name ? user.name[0].toUpperCase() : 'U'}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-1.5 min-w-0">
-                <h3 className="text-sm font-bold text-gray-900 truncate whitespace-nowrap">{user?.name || 'User'}</h3>
+                <h3 className="text-sm font-bold text-[#111827] truncate whitespace-nowrap">{user?.name || 'User'}</h3>
                 {isAdmin && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-amber-100 text-amber-800 rounded uppercase tracking-wider shrink-0">
+                  <span className="px-1.5 py-0.5 text-[9px] font-extrabold bg-[#7886C7]/20 text-[#1A3D64] rounded uppercase tracking-wider shrink-0 border border-[#7886C7]/30">
                     Admin
                   </span>
                 )}
@@ -365,7 +365,7 @@ export default function ChatLayout({ user, onLogout }) {
           </div>
           <button
             onClick={onLogout}
-            className="text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer shrink-0"
+            className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer shrink-0"
           >
             Logout
           </button>
@@ -382,7 +382,7 @@ export default function ChatLayout({ user, onLogout }) {
               placeholder="Search contacts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:bg-white focus:border-[#1A3D64] transition-all"
             />
             {searchQuery && (
               <button
@@ -397,7 +397,7 @@ export default function ChatLayout({ user, onLogout }) {
 
         <div className="p-3 flex-1 overflow-y-auto space-y-1">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Chats ({filteredChats.length})
             </p>
           </div>
@@ -425,16 +425,16 @@ export default function ChatLayout({ user, onLogout }) {
                   onClick={() => handleSelectChat(chat)}
                   className={`group/contact p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between space-x-2 ${
                     isSelected
-                      ? 'bg-blue-50 border-blue-200 shadow-sm'
+                      ? 'bg-[#1A3D64]/10 border-[#1A3D64] shadow-sm'
                       : 'bg-white border-gray-100 hover:bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center space-x-3 overflow-hidden flex-1">
-                    <div className={`w-8 h-8 rounded-full ${chat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-semibold text-xs shrink-0`}>
+                    <div className={`w-8 h-8 rounded-full ${chat.avatarColor || 'bg-[#1A3D64]'} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs`}>
                       {chat.name[0]}
                     </div>
                     <div className="truncate">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{chat.name}</p>
+                      <p className="text-sm font-bold text-[#111827] truncate">{chat.name}</p>
                       <p className="text-xs text-gray-400 truncate">{chat.email || 'Tap to open chat'}</p>
                     </div>
                   </div>
@@ -484,18 +484,18 @@ export default function ChatLayout({ user, onLogout }) {
                   </svg>
                 </button>
 
-                <div className={`w-9 h-9 rounded-full ${activeChat.avatarColor || 'bg-blue-600'} text-white flex items-center justify-center font-bold text-sm shadow-xs`}>
+                <div className={`w-9 h-9 rounded-full ${activeChat.avatarColor || 'bg-[#1A3D64]'} text-white flex items-center justify-center font-bold text-sm shadow-xs`}>
                   {activeChat.name[0]}
                 </div>
                 <div>
-                  <h3 className="text-sm md:text-base font-bold text-gray-900">{activeChat.name}</h3>
+                  <h3 className="text-sm md:text-base font-bold text-[#111827]">{activeChat.name}</h3>
                   {isPeerTyping ? (
-                    <p className="text-xs text-blue-600 font-semibold animate-pulse flex items-center space-x-1">
+                    <p className="text-xs text-[#7886C7] font-bold animate-pulse flex items-center space-x-1">
                       <span>typing</span>
                       <span className="inline-flex space-x-0.5">
-                        <span className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"></span>
-                        <span className="w-1 h-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                        <span className="w-1 h-1 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                        <span className="w-1 h-1 bg-[#7886C7] rounded-full animate-bounce"></span>
+                        <span className="w-1 h-1 bg-[#7886C7] rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                        <span className="w-1 h-1 bg-[#7886C7] rounded-full animate-bounce [animation-delay:0.4s]"></span>
                       </span>
                     </p>
                   ) : (
@@ -521,14 +521,14 @@ export default function ChatLayout({ user, onLogout }) {
               )}
             </div>
 
-            <div className="flex-1 p-3 md:p-6 bg-gray-50/50 overflow-y-auto space-y-3">
+            <div className="flex-1 p-3 md:p-6 bg-slate-50/70 overflow-y-auto space-y-3">
               {currentMessages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center space-y-3 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-sm border border-blue-100">
+                  <div className="w-14 h-14 rounded-2xl bg-[#1A3D64]/10 text-[#1A3D64] flex items-center justify-center text-2xl shadow-sm border border-[#1A3D64]/20">
                     💬
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-gray-800">Say hello to {activeChat.name}!</h4>
+                    <h4 className="text-base font-bold text-[#111827]">Say hello to {activeChat.name}!</h4>
                     <p className="text-xs text-gray-400 max-w-xs mt-1">
                       Type your message below to start a real-time conversation.
                     </p>
@@ -543,8 +543,8 @@ export default function ChatLayout({ user, onLogout }) {
                     <div
                       className={`relative p-3 rounded-2xl max-w-[85%] sm:max-w-xs md:max-w-md text-sm shadow-xs ${
                         msg.sender === 'me'
-                          ? 'bg-blue-600 text-white rounded-br-none'
-                          : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
+                          ? 'bg-gradient-to-r from-[#1A3D64] to-[#244c79] text-white rounded-br-none'
+                          : 'bg-white border border-gray-200 text-[#111827] rounded-bl-none'
                       }`}
                     >
                       <p className="break-words whitespace-pre-wrap">{msg.text}</p>
@@ -580,12 +580,12 @@ export default function ChatLayout({ user, onLogout }) {
                 value={messageText}
                 onChange={handleInputChange}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                className="flex-1 px-3.5 md:px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition-all"
+                className="flex-1 px-3.5 md:px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-sm focus:outline-none focus:bg-white focus:border-[#1A3D64] transition-all"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!messageText.trim()}
-                className="px-4 md:px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 active:scale-95 shrink-0"
+                className="px-4 md:px-5 py-2.5 bg-gradient-to-r from-[#1A3D64] to-[#7886C7] hover:opacity-95 text-white font-bold text-sm rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-[#1A3D64]/20 active:scale-95 shrink-0"
               >
                 Send
               </button>
@@ -593,11 +593,11 @@ export default function ChatLayout({ user, onLogout }) {
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-4">
-            <div className="w-16 h-16 rounded-3xl bg-blue-600 text-white flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#1A3D64] to-[#7886C7] text-white flex items-center justify-center text-3xl shadow-xl shadow-[#1A3D64]/20">
               💬
             </div>
             <div>
-              <h3 className="text-xl font-black text-gray-900 tracking-tight">Welcome to ChitChat</h3>
+              <h3 className="text-xl font-black text-[#111827] tracking-tight">Welcome to ChitChat</h3>
               <p className="text-xs text-gray-400 max-w-sm mt-1">
                 Select a contact from the sidebar to view chat history or start messaging in real-time!
               </p>
