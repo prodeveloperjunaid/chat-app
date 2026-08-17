@@ -160,13 +160,17 @@ io.on('connection', (socket) => {
     try {
       const savedMsg = new Message({
         chatId: String(data.chatId),
-        sender: data.sender,
+        senderId: String(data.senderId || ''),
+        sender: data.sender || 'contact',
         text: data.text,
         time: data.time,
       });
       await savedMsg.save();
 
-      socket.broadcast.emit('receive_message', data);
+      io.emit('receive_message', {
+        ...data,
+        _id: savedMsg._id,
+      });
     } catch (err) {
       console.error('Failed to save message:', err);
     }

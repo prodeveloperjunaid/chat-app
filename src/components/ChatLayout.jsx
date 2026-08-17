@@ -22,14 +22,18 @@ export default function ChatLayout({ user, onLogout }) {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setChats(data);
-          if (data.length > 0) {
-            setActiveChat(data[0]);
+          // Filter out logged in user so self chat is removed
+          const otherUsers = data.filter(
+            (c) => (c._id || c.id) !== (user?._id || user?.id) && c.email !== user?.email
+          );
+          setChats(otherUsers);
+          if (otherUsers.length > 0) {
+            setActiveChat(otherUsers[0]);
           }
         }
       })
       .catch((err) => console.log('Contacts fetch notice:', err));
-  }, []);
+  }, [user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,29 +53,47 @@ export default function ChatLayout({ user, onLogout }) {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
+          // Format messages for current logged in user
+          const formatted = data.map((msg) => ({
+            ...msg,
+            sender: msg.senderId === (user?._id || user?.id) ? 'me' : 'contact',
+          }));
           setMessages((prev) => ({
             ...prev,
-            [chatId]: data,
+            [chatId]: formatted,
           }));
         }
       })
       .catch((err) => console.log('Database fetch notice:', err));
-  }, [activeChat]);
+  }, [activeChat, user]);
 
   useEffect(() => {
     socket.on('receive_message', (incomingData) => {
-      if (incomingData.socketId === socket.id) return;
       const targetId = incomingData.chatId;
-      setMessages((prevMessages) => ({
-        ...prevMessages,
-        [targetId]: [...(prevMessages[targetId] || []), incomingData],
-      }));
+      const isMe = incomingData.senderId === (user?._id || user?.id);
+
+      const msgToPush = {
+        ...incomingData,
+        sender: isMe ? 'me' : 'contact',
+      };
+
+      setMessages((prevMessages) => {
+        const existing = prevMessages[targetId] || [];
+        // Avoid duplicate push if already present
+        if (existing.some((m) => m._id && incomingData._id && m._id === incomingData._id)) {
+          return prevMessages;
+        }
+        return {
+          ...prevMessages,
+          [targetId]: [...existing, msgToPush],
+        };
+      });
     });
 
     return () => {
       socket.off('receive_message');
     };
-  }, []);
+  }, [user]);
 
   const handleSelectChat = (chat) => {
     setActiveChat(chat);
@@ -82,26 +104,17 @@ export default function ChatLayout({ user, onLogout }) {
     if (!messageText.trim() || !activeChat) return;
 
     const chatId = activeChat._id || activeChat.id;
-    const newMessage = {
-      id: Date.now(),
+    const currentUserId = user?._id || user?.id || '';
+
+    const payload = {
       text: messageText,
-      sender: 'me',
       chatId: chatId,
+      senderId: currentUserId,
+      socketId: socket.id,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    socket.emit('send_message', {
-      ...newMessage,
-      chatId: chatId,
-      socketId: socket.id,
-      sender: 'contact',
-    });
-
-    setMessages((prev) => ({
-      ...prev,
-      [chatId]: [...(prev[chatId] || []), newMessage],
-    }));
-
+    socket.emit('send_message', payload);
     setMessageText('');
   };
 
