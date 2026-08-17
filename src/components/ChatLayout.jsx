@@ -132,8 +132,12 @@ export default function ChatLayout({ user, onLogout }) {
             Chats ({chats.length})
           </p>
           {chats.length === 0 ? (
-            <div className="p-4 text-center text-xs text-gray-400">
-              No contacts available yet.
+            <div className="p-6 text-center text-xs text-gray-400 flex flex-col items-center justify-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg">
+                👥
+              </div>
+              <p className="font-medium text-gray-600">No active contacts</p>
+              <p className="text-[11px] text-gray-400">Ask a friend to sign up on ChitChat!</p>
             </div>
           ) : (
             chats.map((chat) => {
@@ -191,8 +195,16 @@ export default function ChatLayout({ user, onLogout }) {
 
             <div className="flex-1 p-4 md:p-6 bg-gray-50/50 overflow-y-auto space-y-3">
               {currentMessages.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-gray-400 text-sm italic">
-                  No messages yet. Send a message to start chatting!
+                <div className="h-full flex flex-col items-center justify-center space-y-3 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-sm border border-blue-100">
+                    💬
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-gray-800">Say hello to {activeChat.name}!</h4>
+                    <p className="text-xs text-gray-400 max-w-xs mt-1">
+                      Type your message below to start a real-time conversation.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 currentMessages.map((msg) => (
@@ -237,8 +249,16 @@ export default function ChatLayout({ user, onLogout }) {
             </div>
           </>
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-            Select a contact to start chatting!
+          <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-blue-600 text-white flex items-center justify-center text-3xl shadow-xl shadow-blue-500/20">
+              💬
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">Welcome to ChitChat</h3>
+              <p className="text-xs text-gray-400 max-w-sm mt-1">
+                Select a contact from the sidebar to view chat history or start messaging in real-time!
+              </p>
+            </div>
           </div>
         )}
       </div>
